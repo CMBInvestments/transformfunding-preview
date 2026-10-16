@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transform Funding Redesign</title>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ 1. DESIGN TOKENS ============ */
+:root{
+  --c-text:#0d1b18; --c-text-2:#1d2f2a; --c-muted:#566660; --c-line:#dfe6e2;
+  --c-bg:#f6f8f6; --c-surface:#ffffff; --c-deep:#0d1b18; --c-on-accent:#0d1b18;
+  --c-primary:#0a6b5a; --c-primary-600:#085646; --c-primary-50:#e6f3ef; --c-link:#0a6b5a;
+  --c-accent:#c6f26b; --c-hl:#c6f26b; --c-warn:#b45309; --c-warn-bg:#fff4e0; --c-danger:#b42318;
+  --glow-1:rgba(198,242,107,.35); --glow-2:rgba(10,107,90,.12);
+  --r-sm:8px; --r-md:14px; --r-lg:22px;
+  --sh-1:0 1px 2px rgba(13,27,24,.06),0 4px 14px rgba(13,27,24,.05);
+  --sh-2:0 24px 60px -24px rgba(13,27,24,.35);
+  --font:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --space-section:clamp(64px,9vw,112px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --c-text:#e6efec; --c-text-2:#c8d7d2; --c-muted:#9db0a9; --c-line:#26352f;
+  --c-bg:#0a1311; --c-surface:#111e1b; --c-deep:#050c0a; --c-on-accent:#0d1b18;
+  --c-primary:#188470; --c-primary-600:#12705f; --c-primary-50:#12302a; --c-link:#5fd0b0;
+  --c-accent:#c6f26b; --c-hl:rgba(198,242,107,.32); --c-warn:#f5b95c; --c-warn-bg:#3a2a10; --c-danger:#ff9b8f;
+  --glow-1:rgba(198,242,107,.09); --glow-2:rgba(24,132,112,.2);
+  color-scheme: dark}}
+:root[data-theme="dark"]{
+  --c-text:#e6efec; --c-text-2:#c8d7d2; --c-muted:#9db0a9; --c-line:#26352f;
+  --c-bg:#0a1311; --c-surface:#111e1b; --c-deep:#050c0a; --c-on-accent:#0d1b18;
+  --c-primary:#188470; --c-primary-600:#12705f; --c-primary-50:#12302a; --c-link:#5fd0b0;
+  --c-accent:#c6f26b; --c-hl:rgba(198,242,107,.32); --c-warn:#f5b95c; --c-warn-bg:#3a2a10; --c-danger:#ff9b8f;
+  --glow-1:rgba(198,242,107,.09); --glow-2:rgba(24,132,112,.2);
+  color-scheme: dark}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--c-text);background:var(--c-bg);line-height:1.6;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+a{color:inherit;text-decoration:none}
+ul{list-style:none}
+img,svg{display:block;max-width:100%}
+.container{max-width:1200px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.section{padding:var(--space-section) 0}
+.section--dark{background:var(--c-deep);color:#fff}
+.section--white{background:var(--c-surface)}
+
+/* ============ 2. TYPE ============ */
+.h1{font-size:clamp(40px,6vw,72px);font-weight:800;line-height:1.02;letter-spacing:-.035em}
+.h2{font-size:clamp(30px,4vw,48px);font-weight:800;line-height:1.08;letter-spacing:-.03em}
+.h3{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.lead{font-size:clamp(17px,1.6vw,20px);color:var(--c-muted)}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--c-link)}
+.eyebrow::before{content:"";width:18px;height:2px;background:currentColor}
+.section--dark .eyebrow{color:var(--c-accent)}
+.section--dark .lead{color:#a9bbb5}
+.hl{background:linear-gradient(transparent 62%,var(--c-hl) 62%)}
+
+/* ============ 3. COMPONENT: BUTTON ============ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:999px;font:700 15px var(--font);border:1.5px solid transparent;cursor:pointer;transition:.18s;white-space:nowrap}
+.btn--primary{background:var(--c-primary);color:#fff}.btn--primary:hover{background:var(--c-primary-600)}
+.btn--accent{background:var(--c-accent);color:var(--c-on-accent)}.btn--accent:hover{filter:brightness(.95)}
+.btn--outline{border-color:var(--c-line);background:var(--c-surface)}.btn--outline:hover{border-color:var(--c-text)}
+.btn--ghost-light{border-color:rgba(255,255,255,.3);color:#fff}.btn--ghost-light:hover{background:rgba(255,255,255,.08)}
+.btn--sm{padding:10px 18px;font-size:14px}
+.btn--block{width:100%}
+
+/* ============ 4. COMPONENT: BADGE / CHIP ============ */
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:var(--c-primary-50);color:var(--c-link)}
+.badge--dark{background:rgba(198,242,107,.15);color:var(--c-accent)}
+.badge--warn{background:var(--c-warn-bg);color:var(--c-warn)}
+
+/* ============ 5. COMPONENT: CARD ============ */
+.card{background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-md);padding:26px;box-shadow:var(--sh-1)}
+.card--link{display:flex;flex-direction:column;gap:10px;transition:.2s}
+.card--link:hover{transform:translateY(-4px);border-color:var(--c-link);box-shadow:var(--sh-2)}
+.card__icon{width:44px;height:44px;border-radius:12px;background:var(--c-primary-50);color:var(--c-link);display:grid;place-items:center}
+.card__icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card__text{font-size:14.5px;color:var(--c-muted);flex:1}
+.card__more{font-size:14px;font-weight:700;color:var(--c-link);display:flex;gap:6px;align-items:center}
+.card__meta{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ============ 6. COMPONENT: SECTION HEADER ============ */
+.sec-head{display:flex;justify-content:space-between;align-items:end;gap:32px;flex-wrap:wrap;margin-bottom:48px}
+.sec-head__copy{max-width:640px;display:grid;gap:14px}
+.sec-head--center{text-align:center;justify-content:center}
+.sec-head--center .sec-head__copy{margin:0 auto;justify-items:center}
+
+/* ============ 7. COMPONENT: FORM FIELD ============ */
+.field{display:grid;gap:6px}
+.field__label{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--c-text-2)}
+.field__label output{color:var(--c-link)}
+.field__hint{font-size:12px;color:var(--c-muted)}
+.input{width:100%;padding:13px 14px;border:1.5px solid var(--c-line);border-radius:var(--r-sm);font:600 16px var(--font);background:var(--c-surface);color:var(--c-text);transition:.15s}
+.input:focus{outline:none;border-color:var(--c-link);box-shadow:0 0 0 4px var(--c-primary-50)}
+.input-group{position:relative}
+.input-group .input{padding-left:30px}
+.input-group__pre{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--c-muted);font-weight:700}
+.range{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;background:linear-gradient(to right,var(--c-primary) var(--fill,50%),var(--c-line) var(--fill,50%));outline:none}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--c-surface);border:3px solid var(--c-primary);cursor:pointer;box-shadow:var(--sh-1)}
+.range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--c-surface);border:3px solid var(--c-primary);cursor:pointer}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--c-bg);border:1.5px solid var(--c-line);border-radius:999px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;padding:9px 10px;border-radius:999px;font:700 13.5px var(--font);color:var(--c-muted);cursor:pointer;transition:.15s}
+.seg button[aria-pressed="true"]{background:var(--c-text);color:var(--c-bg)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ============ 8. COMPONENT: STAT ============ */
+.stat{display:grid;gap:2px}
+.stat__label{font-size:12.5px;font-weight:600;color:#9db0a9}
+.stat__value{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.stat--lg .stat__value{font-size:clamp(38px,5vw,54px);color:var(--c-accent);line-height:1}
+.stat--pos .stat__value{color:var(--c-accent)}.stat--neg .stat__value{color:#ff9b8f}
+
+/* ============ 9. COMPONENT: ACCORDION ============ */
+.acc{border-top:1px solid var(--c-line)}
+.acc__item{border-bottom:1px solid var(--c-line)}
+.acc__btn{width:100%;display:flex;justify-content:space-between;gap:20px;align-items:center;padding:22px 0;background:none;border:0;font:700 17px var(--font);color:var(--c-text);cursor:pointer;text-align:left}
+.acc__btn::after{content:"+";font-size:24px;font-weight:500;color:var(--c-link);transition:.2s}
+.acc__btn[aria-expanded="true"]::after{transform:rotate(45deg)}
+.acc__panel{display:none;padding:0 0 22px;color:var(--c-muted);max-width:760px}
+.acc__btn[aria-expanded="true"]+.acc__panel{display:block}
+
+/* ============ 10. COMPONENT: STEP ============ */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.step{padding:28px;border-radius:var(--r-md);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.step__n{font-size:13px;font-weight:800;color:var(--c-on-accent);background:var(--c-accent);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;margin-bottom:18px}
+.step p{font-size:14.5px;color:#a9bbb5;margin-top:8px}
+
+/* ============ 11. LAYOUT: NAV ============ */
+.util{background:var(--c-deep);color:#a9bbb5;font-size:13px}
+.util .container{display:flex;justify-content:space-between;gap:16px;padding-top:9px;padding-bottom:9px;flex-wrap:wrap}
+.util a:hover{color:#fff}
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--c-bg) 90%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--c-line)}
+.nav .container{display:flex;align-items:center;justify-content:space-between;height:76px;gap:24px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.03em}
+.logo__mark{width:34px;height:34px;border-radius:10px;background:var(--c-primary);display:grid;place-items:center}
+.logo__mark svg{width:20px;height:20px;stroke:var(--c-accent);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.menu{display:flex;gap:4px;align-items:center}
+.menu__item{position:relative}
+.menu__link{display:block;padding:10px 14px;border-radius:999px;font-size:14.5px;font-weight:600;color:var(--c-text-2)}
+.menu__item:hover>.menu__link{background:var(--c-primary-50);color:var(--c-link)}
+.menu__drop{position:absolute;left:0;top:100%;min-width:280px;background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-md);box-shadow:var(--sh-2);padding:10px;display:none}
+.menu__item:hover .menu__drop{display:block}
+.menu__drop a{display:block;padding:10px 12px;border-radius:8px;font-size:14px;font-weight:600}
+.menu__drop a small{display:block;font-weight:500;color:var(--c-muted);font-size:12.5px}
+.menu__drop a:hover{background:var(--c-primary-50)}
+.nav__cta{display:flex;gap:10px}
+
+/* ============ 12. HERO ============ */
+.hero{padding:72px 0 150px;background:
+  radial-gradient(900px 400px at 100% 0%,var(--glow-1),transparent 60%),
+  radial-gradient(700px 400px at 0% 100%,var(--glow-2),transparent 60%),var(--c-bg)}
+.hero__grid{display:grid;grid-template-columns:1.2fr .8fr;gap:56px;align-items:center}
+.hero__copy{display:grid;gap:26px}
+.hero__actions{display:flex;gap:12px;flex-wrap:wrap}
+.hero__checks{display:flex;gap:22px;flex-wrap:wrap;font-size:14px;font-weight:600;color:var(--c-text-2)}
+.hero__checks li{display:flex;gap:8px;align-items:center}
+.hero__checks svg{width:18px;height:18px;stroke:var(--c-link);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.hero__panel{position:relative;border-radius:var(--r-lg);background:var(--c-deep);color:#fff;padding:28px;box-shadow:var(--sh-2)}
+.hero__panel h3{font-size:15px;color:#a9bbb5;font-weight:600;margin-bottom:16px}
+.pipeline{display:grid;gap:12px}
+.pipeline li{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.06);font-weight:700;font-size:15px}
+.pipeline li span:last-child{margin-left:auto;font-size:12.5px;color:var(--c-accent);font-weight:700}
+.pipeline i{width:28px;height:28px;border-radius:50%;background:var(--c-accent);color:var(--c-on-accent);display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:800}
+
+/* ============ 13. CALCULATOR ============ */
+.calc{margin-top:-96px;position:relative;z-index:5}
+.calc__shell{display:grid;grid-template-columns:1.05fr .95fr;border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-2);border:1px solid var(--c-line);background:var(--c-surface)}
+.calc__inputs{padding:36px;display:grid;gap:22px;align-content:start}
+.calc__head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.calc__results{background:var(--c-deep);color:#fff;padding:36px;display:grid;gap:22px;align-content:start}
+.calc__split{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px}
+.calc__rule{height:1px;background:rgba(255,255,255,.12);border:0}
+.alert{padding:12px 14px;border-radius:10px;font-size:13.5px;font-weight:600;background:rgba(255,196,86,.14);color:#ffd68a;display:none}
+.alert.is-on{display:block}
+.bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:rgba(255,255,255,.1)}
+.bar span{display:block;transition:width .25s}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:#a9bbb5;margin-top:10px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.calc__foot{font-size:12px;color:#7f948d;line-height:1.5}
+.calc__actions{display:flex;gap:10px;flex-wrap:wrap}
+.adv{border:1.5px dashed var(--c-line);border-radius:var(--r-md);padding:4px 16px}
+.adv summary{cursor:pointer;font-weight:700;font-size:14px;padding:12px 0;color:var(--c-link)}
+.adv__body{display:grid;gap:18px;padding:6px 0 16px}
+
+/* ============ 14. PROGRAM GRID / FEATURES ============ */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.compare{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--c-line);background:var(--c-surface);box-shadow:var(--sh-1)}
+.compare__row{display:grid;grid-template-columns:1.1fr 1fr 1fr;font-size:14.5px}
+.compare__row>div{padding:16px 20px;border-bottom:1px solid var(--c-line)}
+.compare__row:last-child>div{border-bottom:0}
+.compare__row--head>div{font-weight:800;background:var(--c-bg)}
+.compare__row>div:nth-child(2){background:var(--c-primary-50);font-weight:700;color:var(--c-link)}
+.compare__row--head>div:nth-child(2){background:var(--c-primary);color:#fff}
+.compare__row>div:nth-child(3){color:var(--c-muted)}
+
+/* ============ 15. CTA + FOOTER ============ */
+.cta{background:var(--c-primary);color:#fff;border-radius:var(--r-lg);padding:clamp(32px,5vw,64px);display:flex;justify-content:space-between;gap:32px;align-items:center;flex-wrap:wrap;position:relative;overflow:hidden}
+.cta::after{content:"";position:absolute;right:-80px;top:-80px;width:300px;height:300px;border-radius:50%;background:rgba(198,242,107,.18)}
+.cta>*{position:relative;z-index:1}
+.cta p{color:#cde5de;margin-top:10px;max-width:560px}
+.cta__actions{display:flex;gap:12px;flex-wrap:wrap}
+.footer{border-top:1px solid var(--c-line);background:var(--c-deep);color:#9db0a9;padding:72px 0 28px;font-size:14px}
+.footer__cols{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;margin-bottom:48px}
+.footer h4{color:#fff;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:16px}
+.footer li{margin-bottom:10px}.footer a:hover{color:var(--c-accent)}
+.footer .logo{color:#fff;margin-bottom:14px}
+.footer__legal{border-top:1px solid rgba(255,255,255,.1);padding-top:22px;font-size:12px;line-height:1.7;display:grid;gap:8px}
+
+/* ============ 16. COMPONENT LIBRARY SECTION ============ */
+.lib{display:grid;gap:28px}
+.lib__row{display:grid;grid-template-columns:150px 1fr;gap:20px;align-items:start;padding-bottom:28px;border-bottom:1px solid var(--c-line)}
+.lib__row:last-child{border:0}
+.lib__name{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--c-muted);padding-top:6px}
+.lib__demo{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{width:92px}.swatch i{display:block;height:54px;border-radius:10px;border:1px solid var(--c-line);margin-bottom:6px}
+.swatch b{font-size:11.5px;display:block}.swatch span{font-size:11px;color:var(--c-muted)}
+
+/* sticky mobile CTA */
+.mbar{display:none}
+
+@media(max-width:1020px){
+  .menu{display:none}
+  .hero__grid,.split,.calc__shell{grid-template-columns:1fr}
+  .grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr 1fr}
+  .footer__cols{grid-template-columns:1fr 1fr}
+  .hero{padding-bottom:130px}
+}
+@media(max-width:620px){
+  .container{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .grid-4,.grid-3,.steps,.grid-2,.calc__split{grid-template-columns:1fr}
+  .calc__inputs,.calc__results{padding:24px 20px}
+  .nav__cta .btn--outline{display:none}
+  .util .container{justify-content:center}
+  .compare__row{grid-template-columns:1fr 1fr 1fr;font-size:12.5px}.compare__row>div{padding:12px 10px}
+  .lib__row{grid-template-columns:1fr}
+  .footer__cols{grid-template-columns:1fr}
+  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--c-surface);border-top:1px solid var(--c-line);padding:10px max(14px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));gap:10px}
+  .mbar .btn{flex:1}
+  body{padding-bottom:70px}
+}
+
+.hero__grid>*,.split>*,.calc__shell>*,.grid-2>*,.calc__split>*,.footer__cols>*{min-width:0}
+.mail{font-weight:700;color:var(--c-accent);user-select:all}
+:focus-visible{outline:3px solid var(--c-link);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+
+
+<!-- SVG icon sprite (reused by every component) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-hammer" viewBox="0 0 24 24"><path d="M14 4l6 6-3 3-6-6zM11 7L3 15l3 3 8-8M4 20h8"/></symbol>
+  <symbol id="i-build" viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12M10 21v-6h4v6"/></symbol>
+  <symbol id="i-bridge" viewBox="0 0 24 24"><path d="M2 18h20M4 18V9M20 18V9M4 9c4 6 12 6 16 0M12 15v3"/></symbol>
+  <symbol id="i-office" viewBox="0 0 24 24"><path d="M4 21V4h10v17M14 9h6v12M8 8h2M8 12h2M8 16h2M17 13h0M17 17h0M2 21h20"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v11h14V10M10 21v-6h4v6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></symbol>
+  <symbol id="i-units" viewBox="0 0 24 24"><path d="M3 21V8l5-3v16M8 21V3l8 3v15M16 21v-9l5 2v7M2 21h20M11 8h2M11 12h2M11 16h2"/></symbol>
+  <symbol id="i-cycle" viewBox="0 0 24 24"><path d="M20 12a8 8 0 01-14 5M4 12a8 8 0 0114-5M18 3v4h-4M6 21v-4h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+</svg>
+
+<div class="util"><div class="container">
+  <span>Direct lender for real estate investors · New Jersey</span>
+  <span><a href="tel:7328776470">(732) 877-6470</a> &nbsp;·&nbsp; <a href="mailto:info@transformfunding.com">info@transformfunding.com</a></span>
+</div></div>
+
+<header class="nav"><div class="container">
+  <a class="logo" href="#"><span class="logo__mark"><svg><use href="#i-check"/></svg></span>Transform Funding</a>
+  <nav class="menu" aria-label="Primary">
+    <div class="menu__item"><a class="menu__link" href="#programs">Loan Programs</a>
+      <div class="menu__drop">
+        <a href="#">Fix &amp; Flip<small>Acquisition + rehab funding</small></a>
+        <a href="#">New Construction<small>Ground-up draw financing</small></a>
+        <a href="#">Bridge Loans<small>Residential &amp; commercial</small></a>
+        <a href="#">Rental &amp; Short-Term Stay<small>Long-term hold and Airbnb</small></a>
+        <a href="#">Multi-Family Development</a>
+      </div></div>
+    <div class="menu__item"><a class="menu__link" href="#">Refinance</a>
+      <div class="menu__drop"><a href="#">Cash-Out Refinance</a><a href="#">Rate &amp; Term Refinance</a></div></div>
+    <div class="menu__item"><a class="menu__link" href="#calculator">Deal Calculator</a></div>
+    <div class="menu__item"><a class="menu__link" href="#how">How It Works</a></div>
+    <div class="menu__item"><a class="menu__link" href="#">Our Team</a></div>
+  </nav>
+  <div class="nav__cta"><a class="btn btn--outline btn--sm" href="#">Book a Call</a><a class="btn btn--primary btn--sm" href="#">Apply Now</a></div>
+</div></header>
+
+<!-- ============ HERO ============ -->
+<section class="hero"><div class="container hero__grid">
+  <div class="hero__copy">
+    <span class="eyebrow">Direct real estate lender</span>
+    <h1 class="h1">Capital that moves at the <span class="hl">speed of your deal.</span></h1>
+    <p class="lead">Transform Funding is a direct lender for acquisitions, rehabs, construction and refinances. In-house decisions, asset-based underwriting, and a team that knows real estate from the ground up.</p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="#calculator">Run your numbers</a>
+      <a class="btn btn--outline" href="#">Get Proof of Funds</a>
+    </div>
+    <ul class="hero__checks">
+      <li><svg><use href="#i-check"/></svg>Direct lender</li>
+      <li><svg><use href="#i-check"/></svg>In-house decisions</li>
+      <li><svg><use href="#i-check"/></svg>Deal-first underwriting</li>
+    </ul>
+  </div>
+  <aside class="hero__panel">
+    <h3>From application to funded</h3>
+    <ul class="pipeline">
+      <li><i>1</i>Apply<span>Simple online form</span></li>
+      <li><i>2</i>Approve<span>Underwrite the deal</span></li>
+      <li><i>3</i>Fund<span>Close and build</span></li>
+    </ul>
+    <a class="btn btn--accent btn--block" style="margin-top:18px" href="#">Start an application</a>
+  </aside>
+</div></section>
+
+<!-- ============ CALCULATOR ============ -->
+<section class="calc" id="calculator"><div class="container">
+  <div class="calc__shell">
+    <form class="calc__inputs" id="calc" onsubmit="return false" novalidate>
+      <div class="calc__head">
+        <div><span class="eyebrow">Deal Calculator</span><h2 class="h3" style="font-size:24px;margin-top:6px">Model your deal in seconds</h2></div>
+      </div>
+
+      <div class="seg" id="mode" role="group" aria-label="Loan type">
+        <button type="button" aria-pressed="true" data-mode="flip">Fix &amp; Flip</button>
+        <button type="button" aria-pressed="false" data-mode="build">New Build</button>
+        <button type="button" aria-pressed="false" data-mode="bridge">Bridge</button>
+      </div>
+
+      <div class="grid-2">
+        <div class="field"><label class="field__label" for="price" id="lblPrice">Purchase price</label>
+          <div class="input-group"><span class="input-group__pre">$</span><input class="input" id="price" data-money inputmode="numeric" value="350,000"></div></div>
+        <div class="field"><label class="field__label" for="rehab" id="lblRehab">Rehab budget</label>
+          <div class="input-group"><span class="input-group__pre">$</span><input class="input" id="rehab" data-money inputmode="numeric" value="80,000"></div></div>
+      </div>
+      <div class="field"><label class="field__label" for="arv">After-repair value (ARV)</label>
+        <div class="input-group"><span class="input-group__pre">$</span><input class="input" id="arv" data-money inputmode="numeric" value="560,000"></div>
+        <span class="field__hint">Estimated value once work is complete.</span></div>
+
+      <div class="field"><label class="field__label" for="term">Loan term <output id="oTerm">12 mo</output></label>
+        <input class="range" type="range" id="term" min="6" max="24" step="1" value="12"></div>
+      <div class="field"><label class="field__label" for="rate">Interest rate (illustrative) <output id="oRate">11.0%</output></label>
+        <input class="range" type="range" id="rate" min="7" max="16" step="0.25" value="11"></div>
+      <div class="field"><label class="field__label" for="adv">Purchase financed <output id="oAdv">90%</output></label>
+        <input class="range" type="range" id="adv" min="50" max="100" step="1" value="90"></div>
+
+      <details class="adv"><summary>Advanced assumptions</summary>
+        <div class="adv__body">
+          <div class="grid-2">
+            <div class="field"><label class="field__label" for="rehabPct">Rehab financed <output id="oRehabPct">100%</output></label>
+              <input class="range" type="range" id="rehabPct" min="0" max="100" step="5" value="100"></div>
+            <div class="field"><label class="field__label" for="cap">Max loan-to-ARV <output id="oCap">75%</output></label>
+              <input class="range" type="range" id="cap" min="60" max="85" step="1" value="75"></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label class="field__label" for="pts">Origination points <output id="oPts">2.0</output></label>
+              <input class="range" type="range" id="pts" min="0" max="4" step="0.25" value="2"></div>
+            <div class="field"><label class="field__label" for="sell">Selling costs <output id="oSell">6%</output></label>
+              <input class="range" type="range" id="sell" min="0" max="10" step="0.5" value="6"></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label class="field__label" for="fees">Closing / admin fees</label>
+              <div class="input-group"><span class="input-group__pre">$</span><input class="input" id="fees" data-money inputmode="numeric" value="2,500"></div></div>
+            <div class="field"><span class="field__label">Rehab interest</span>
+              <div class="seg" id="draws"><button type="button" aria-pressed="true" data-v="draws">As drawn</button><button type="button" aria-pressed="false" data-v="full">Full amount</button></div></div>
+          </div>
+        </div>
+      </details>
+    </form>
+
+    <div class="calc__results" aria-live="polite">
+      <div class="stat stat--lg"><span class="stat__label">Estimated total loan</span><span class="stat__value" id="rLoan">$0</span></div>
+      <div class="alert" id="capAlert"></div>
+      <div class="calc__split">
+        <div class="stat"><span class="stat__label">Cash to close</span><span class="stat__value" id="rClose">$0</span></div>
+        <div class="stat"><span class="stat__label">Monthly interest-only</span><span class="stat__value" id="rMonthly">$0</span></div>
+        <div class="stat"><span class="stat__label">Loan-to-cost</span><span class="stat__value" id="rLtc">0%</span></div>
+        <div class="stat"><span class="stat__label">Loan-to-ARV</span><span class="stat__value" id="rLtarv">0%</span></div>
+      </div>
+      <hr class="calc__rule">
+      <div>
+        <div class="stat"><span class="stat__label">Total financing cost</span><span class="stat__value" id="rCost">$0</span></div>
+        <div class="bar" style="margin-top:12px"><span id="bInt" style="background:#c6f26b"></span><span id="bPts" style="background:#5fd0b0"></span><span id="bFee" style="background:#3b8fd9"></span></div>
+        <div class="legend"><span><i style="background:#c6f26b"></i>Interest <b id="lInt"></b></span><span><i style="background:#5fd0b0"></i>Points <b id="lPts"></b></span><span><i style="background:#3b8fd9"></i>Fees <b id="lFee"></b></span></div>
+      </div>
+      <hr class="calc__rule">
+      <div class="calc__split">
+        <div class="stat" id="profitStat"><span class="stat__label">Est. net profit</span><span class="stat__value" id="rProfit">$0</span></div>
+        <div class="stat"><span class="stat__label">Return on cash invested</span><span class="stat__value" id="rRoi">0%</span></div>
+        <div class="stat"><span class="stat__label">Total cash invested</span><span class="stat__value" id="rCash">$0</span></div>
+        <div class="stat"><span class="stat__label">Annualized return</span><span class="stat__value" id="rAnn">0%</span></div>
+      </div>
+      <div class="calc__actions">
+        <a class="btn btn--accent" href="#" id="quoteBtn">Get this quote</a>
+        <button class="btn btn--ghost-light" type="button" id="copyBtn">Copy summary</button>
+      </div>
+      <p class="calc__foot">To send these numbers, email <span class="mail">info@transformfunding.com</span> or call <span class="mail">(732) 781-0111</span>.</p>
+      <p class="calc__foot">Illustrative estimate only, not a commitment to lend. Rates, points, leverage and fees are placeholder assumptions and vary by program, borrower, property and market. All loans subject to underwriting and approval.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROGRAMS (rendered from data = reusable card) ============ -->
+<section class="section" id="programs"><div class="container">
+  <div class="sec-head"><div class="sec-head__copy"><span class="eyebrow">Loan programs</span><h2 class="h2">One lender for every stage of the deal.</h2></div>
+    <p class="lead" style="max-width:420px">Short-term capital structured around your asset and your exit, from acquisition through stabilization or sale.</p></div>
+  <div class="grid-4" id="programGrid"></div>
+</div></section>
+
+<!-- ============ WHY ============ -->
+<section class="section section--white"><div class="container split">
+  <div style="display:grid;gap:20px">
+    <span class="eyebrow">The Transform difference</span>
+    <h2 class="h2">We underwrite the deal first, not just the borrower.</h2>
+    <p class="lead">Hard money should empower your deal, not complicate it. We learn your strategy, asset and exit plan, then align financing from acquisition to sale.</p>
+    <div><a class="btn btn--primary" href="#">Meet the team</a></div>
+  </div>
+  <div class="compare" role="table" aria-label="Comparison">
+    <div class="compare__row compare__row--head"><div></div><div>Transform</div><div>Typical lender</div></div>
+    <div class="compare__row"><div>Decision-making</div><div>In-house</div><div>Layers of review</div></div>
+    <div class="compare__row"><div>Underwriting focus</div><div>The deal</div><div>The borrower</div></div>
+    <div class="compare__row"><div>Terms</div><div>Flexible</div><div>Rigid boxes</div></div>
+    <div class="compare__row"><div>After closing</div><div>We stay involved</div><div>Hand-off</div></div>
+  </div>
+</div></section>
+
+<!-- ============ HOW IT WORKS (rendered from data) ============ -->
+<section class="section section--dark" id="how"><div class="container">
+  <div class="sec-head sec-head--center"><div class="sec-head__copy"><span class="eyebrow">How it works</span><h2 class="h2">Apply. Approve. Fund.</h2><p class="lead">A straightforward process with transparent terms and no surprises.</p></div></div>
+  <div class="steps" id="stepGrid"></div>
+</div></section>
+
+<!-- ============ FAQ (rendered from data) ============ -->
+<section class="section"><div class="container split" style="align-items:start">
+  <div style="display:grid;gap:18px;position:sticky;top:110px"><span class="eyebrow">FAQ</span><h2 class="h2">Questions, answered.</h2><p class="lead">Not seeing yours? Talk to a funding specialist. No pressure, no obligation.</p>
+    <div><a class="btn btn--outline" href="tel:7327810111">Call (732) 781-0111</a></div></div>
+  <div class="acc" id="faq"></div>
+</div></section>
+
+<!-- ============ CTA ============ -->
+<section style="padding-bottom:var(--space-section)"><div class="container">
+  <div class="cta"><div><h2 class="h2">Ready to fund your next deal?</h2><p>Apply in minutes or book a call with a funding specialist to review your strategy.</p></div>
+    <div class="cta__actions"><a class="btn btn--accent" href="#">Apply Now</a><a class="btn btn--ghost-light" href="#">Book Appointment</a></div></div>
+</div></section>
+
+<!-- ============ COMPONENT LIBRARY ============ -->
+<section class="section section--white" id="components"><div class="container">
+  <div class="sec-head"><div class="sec-head__copy"><span class="eyebrow">Design system</span><h2 class="h2">Reusable component library</h2><p class="lead">Every block above is built from these pieces and a single token set, so new pages (Fix &amp; Flip, New Construction, etc.) assemble without redesigning anything. In Webflow these map directly to Components + Variables.</p></div></div>
+  <div class="lib">
+    <div class="lib__row"><div class="lib__name">Color tokens</div><div class="swatches">
+      <div class="swatch"><i style="background:#0d1b18"></i><b>Ink</b><span>--c-ink</span></div>
+      <div class="swatch"><i style="background:#0a6b5a"></i><b>Primary</b><span>--c-primary</span></div>
+      <div class="swatch"><i style="background:#e6f3ef"></i><b>Primary 50</b><span>--c-primary-50</span></div>
+      <div class="swatch"><i style="background:#c6f26b"></i><b>Accent</b><span>--c-accent</span></div>
+      <div class="swatch"><i style="background:#f6f8f6"></i><b>Background</b><span>--c-bg</span></div>
+      <div class="swatch"><i style="background:#dfe6e2"></i><b>Line</b><span>--c-line</span></div></div></div>
+    <div class="lib__row"><div class="lib__name">Type scale</div><div style="display:grid;gap:8px"><div class="h1" style="font-size:44px">Heading 1</div><div class="h2" style="font-size:30px">Heading 2</div><div class="h3">Heading 3</div><div class="lead" style="font-size:16px">Lead / body text, Manrope 400–800</div></div></div>
+    <div class="lib__row"><div class="lib__name">Button</div><div class="lib__demo"><a class="btn btn--primary">Primary</a><a class="btn btn--accent">Accent</a><a class="btn btn--outline">Outline</a><a class="btn btn--primary btn--sm">Small</a></div></div>
+    <div class="lib__row"><div class="lib__name">Badge</div><div class="lib__demo"><span class="badge">Default</span><span class="badge badge--warn">Warning</span><span class="badge badge--dark" style="background:var(--c-deep)">On dark</span></div></div>
+    <div class="lib__row"><div class="lib__name">Form field</div><div class="lib__demo" style="width:100%"><div class="field" style="min-width:220px"><label class="field__label">Label</label><div class="input-group"><span class="input-group__pre">$</span><input class="input" value="250,000"></div><span class="field__hint">Helper text</span></div><div class="field" style="min-width:220px"><label class="field__label">Slider <output>60%</output></label><input class="range" type="range" style="--fill:60%" value="60"></div><div class="seg" style="min-width:240px"><button aria-pressed="true">Option A</button><button aria-pressed="false">Option B</button></div></div></div>
+    <div class="lib__row"><div class="lib__name">Card (link)</div><div class="lib__demo"><div class="card card--link" style="max-width:300px"><div class="card__icon"><svg><use href="#i-hammer"/></svg></div><h3 class="h3">Card title</h3><p class="card__text">Reusable program, feature or resource card.</p><span class="card__more">Explore →</span></div></div></div>
+    <div class="lib__row"><div class="lib__name">Stat (on dark)</div><div class="lib__demo"><div style="background:var(--c-deep);padding:22px;border-radius:14px;display:flex;gap:36px"><div class="stat stat--lg"><span class="stat__label">Large</span><span class="stat__value">$478,000</span></div><div class="stat"><span class="stat__label">Standard</span><span class="stat__value" style="color:#fff">$4,382</span></div></div></div></div>
+    <div class="lib__row"><div class="lib__name">Section header</div><div class="sec-head" style="margin:0"><div class="sec-head__copy"><span class="eyebrow">Eyebrow</span><h2 class="h3" style="font-size:26px">Section title with supporting lead</h2></div></div></div>
+  </div>
+</div></section>
+
+<footer class="footer"><div class="container">
+  <div class="footer__cols">
+    <div><a class="logo" href="#"><span class="logo__mark"><svg><use href="#i-check"/></svg></span>Transform Funding</a><p>Direct capital for real estate investors and developers across New Jersey.</p></div>
+    <div><h4>Programs</h4><ul><li><a href="#">Fix &amp; Flip</a></li><li><a href="#">New Construction</a></li><li><a href="#">Residential Bridge</a></li><li><a href="#">Commercial Bridge</a></li></ul></div>
+    <div><h4>More loans</h4><ul><li><a href="#">Short-Term Stay</a></li><li><a href="#">Multi-Family</a></li><li><a href="#">Cash-Out Refinance</a></li><li><a href="#">Refinance</a></li></ul></div>
+    <div><h4>Contact</h4><ul><li><a href="tel:7328776470">(732) 877-6470</a></li><li><a href="mailto:info@transformfunding.com">info@transformfunding.com</a></li><li><a href="#">Our Team</a></li><li><a href="#calculator">Deal Calculator</a></li></ul></div>
+  </div>
+  <div class="footer__legal"><span>© 2026 Transform Funding Group. All rights reserved.</span>
+    <span>Loans are for business-purpose investment real estate. Subject to underwriting and approval. Terms vary by program. Add required licensing and disclosure language here. Concept mockup, not the live site.</span></div>
+</div></footer>
+
+<div class="mbar"><a class="btn btn--outline btn--sm" href="tel:7328776470">Call</a><a class="btn btn--primary btn--sm" href="#calculator">Calculate</a><a class="btn btn--accent btn--sm" href="#">Apply</a></div>
+
+<script>
+/* ===== Data-driven components: add an item to the array, a new card appears ===== */
+const PROGRAMS=[
+ {icon:'hammer',t:'Fix & Flip',d:'Acquisition and rehab funding for value-add projects.',tags:['Purchase + rehab','Draws']},
+ {icon:'build',t:'New Construction',d:'Ground-up financing from foundation to finish.',tags:['Draw schedule']},
+ {icon:'bridge',t:'Residential Bridge',d:'Short-term capital to buy, renovate or transition.',tags:['Fast close']},
+ {icon:'office',t:'Commercial Bridge',d:'Bridge financing for income-producing assets.',tags:['Commercial']},
+ {icon:'key',t:'Rental Loans',d:'Long-term hold financing for rental portfolios.',tags:['Buy & hold']},
+ {icon:'home',t:'Short-Term Stay',d:'Loans built for Airbnb and short-term rentals.',tags:['STR']},
+ {icon:'units',t:'Multi-Family',d:'Development financing for multi-family projects.',tags:['Development']},
+ {icon:'cycle',t:'Refinance',d:'Rate-and-term and cash-out refinance solutions.',tags:['Cash-out']}
+];
+const STEPS=[
+ ['Apply with confidence','A simple, secure application. No unnecessary paperwork or delays.'],
+ ['Review & strategy','Our specialists build a personalized funding strategy and match the right program.'],
+ ['Approval & terms','Transparent rates, timelines and requirements. No surprises.'],
+ ['Funding & growth','Funds move quickly, and we stay with you beyond closing.']
+];
+const FAQ=[
+ ['What is a hard money loan?','A short-term, asset-based loan used to acquire, renovate, build or bridge a property. Underwriting focuses on the deal (value, scope, exit plan) rather than only the borrower\u2019s income profile.'],
+ ['What can I use the calculator for?','It estimates loan size, cash to close, interest payments, total financing cost and projected return on a deal. It uses illustrative assumptions, so a funding specialist will confirm real terms for your scenario.'],
+ ['What loan-to-ARV limits apply?','Maximum leverage depends on the program, property and borrower. The calculator lets you test a cap so you can see how leverage changes your cash to close.'],
+ ['How are rehab funds released?','Rehab and construction funds are typically released in draws as work is completed. Turn on "As drawn" in the calculator to estimate interest on the balance outstanding over time.'],
+ ['How fast can I get a proof of funds letter?','Request one from the Proof of Funds page and a specialist will follow up. [Add real turnaround time here.]']
+];
+const $=s=>document.querySelector(s);
+const svg=n=>`<svg><use href="#i-${n}"/></svg>`;
+$('#programGrid').innerHTML=PROGRAMS.map(p=>`
+ <a class="card card--link" href="#"><div class="card__icon">${svg(p.icon)}</div><h3 class="h3">${p.t}</h3>
+ <p class="card__text">${p.d}</p><div class="card__meta">${p.tags.map(t=>`<span class="badge">${t}</span>`).join('')}</div>
+ <span class="card__more">Explore program →</span></a>`).join('');
+$('#stepGrid').innerHTML=STEPS.map((s,i)=>`<div class="step"><div class="step__n">${i+1}</div><h3 class="h3">${s[0]}</h3><p>${s[1]}</p></div>`).join('');
+$('#faq').innerHTML=FAQ.map((f,i)=>`<div class="acc__item"><button class="acc__btn" aria-expanded="${i===0}">${f[0]}</button><div class="acc__panel">${f[1]}</div></div>`).join('');
+document.querySelectorAll('.acc__btn').forEach(b=>b.addEventListener('click',()=>b.setAttribute('aria-expanded',b.getAttribute('aria-expanded')!=='true')));
+
+/* ===== Calculator ===== */
+const MODES={
+ flip:{price:'Purchase price',rehab:'Rehab budget',v:{price:350000,rehab:80000,arv:560000,term:12,rate:11,adv:90,rehabPct:100,cap:75}},
+ build:{price:'Land / lot cost',rehab:'Construction budget',v:{price:250000,rehab:450000,arv:1100000,term:14,rate:11.5,adv:80,rehabPct:90,cap:70}},
+ bridge:{price:'Property value / price',rehab:'Improvements (optional)',v:{price:900000,rehab:0,arv:1100000,term:12,rate:10.5,adv:70,rehabPct:0,cap:70}}
+};
+const money=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>parseFloat(String($('#'+id).value).replace(/[^0-9.]/g,''))||0;
+let drawMode='draws', mode='flip';
+const fmtIn=el=>{const v=String(el.value).replace(/[^0-9]/g,'');el.value=v?Number(v).toLocaleString('en-US'):''};
+const fill=el=>el.style.setProperty('--fill',((el.value-el.min)/(el.max-el.min)*100)+'%');
+const label={term:v=>v+' mo',rate:v=>Number(v).toFixed(2).replace(/0$/,'')+'%',adv:v=>v+'%',rehabPct:v=>v+'%',cap:v=>v+'%',pts:v=>Number(v).toFixed(2).replace(/0$/,''),sell:v=>v+'%'};
+const cap2={term:'oTerm',rate:'oRate',adv:'oAdv',rehabPct:'oRehabPct',cap:'oCap',pts:'oPts',sell:'oSell'};
+
+function calc(){
+  const P=num('price'),R=num('rehab'),A=num('arv'),F=num('fees');
+  const n=+$('#term').value,r=+$('#rate').value/100,adv=+$('#adv').value/100,rp=+$('#rehabPct').value/100,cap=+$('#cap').value/100,pts=+$('#pts').value/100,sell=+$('#sell').value/100;
+  const maxLoan=A*cap;
+  let initial=P*adv, rehabF=R*rp, capped=false, want=initial+rehabF;
+  if(A>0&&want>maxLoan){capped=true;initial=Math.min(initial,maxLoan);rehabF=Math.max(0,Math.min(rehabF,maxLoan-initial));}
+  const loan=initial+rehabF;
+  const pointsCost=loan*pts;
+  const cashClose=(P-initial)+pointsCost+F;
+  const rehabOop=R-rehabF;
+  const monthly=initial*r/12 + rehabF*r/12*(drawMode==='draws'?0.5:1);
+  const interest=monthly*n;
+  const fin=interest+pointsCost+F;
+  const selling=A*sell;
+  const capIn=cashClose+rehabOop+interest;
+  const profit=A-selling-P-R-fin;
+  const roi=capIn>0?profit/capIn:0;
+  const ann=roi*12/n;
+  const cost=P+R;
+  $('#rLoan').textContent=money(loan);
+  $('#rClose').textContent=money(cashClose);
+  $('#rMonthly').textContent=money(monthly);
+  $('#rLtc').textContent=cost>0?(loan/cost*100).toFixed(0)+'%':'0%';
+  $('#rLtarv').textContent=A>0?(loan/A*100).toFixed(0)+'%':'0%';
+  $('#rCost').textContent=money(fin);
+  $('#rProfit').textContent=money(profit);
+  $('#rRoi').textContent=(roi*100).toFixed(1)+'%';
+  $('#rAnn').textContent=(ann*100).toFixed(1)+'%';
+  $('#rCash').textContent=money(capIn);
+  $('#profitStat').className='stat '+(profit>=0?'stat--pos':'stat--neg');
+  const tot=fin||1;
+  $('#bInt').style.width=(interest/tot*100)+'%';$('#bPts').style.width=(pointsCost/tot*100)+'%';$('#bFee').style.width=(F/tot*100)+'%';
+  $('#lInt').textContent=money(interest);$('#lPts').textContent=money(pointsCost);$('#lFee').textContent=money(F);
+  const al=$('#capAlert');
+  if(capped){al.textContent=`Loan capped at ${(cap*100).toFixed(0)}% of ARV (${money(maxLoan)}). You would cover the difference: ${money(want-loan)}.`;al.classList.add('is-on')}
+  else al.classList.remove('is-on');
+  window.__summary=`Transform Funding deal estimate (${MODES[mode].price.split(' ')[0]} mode)\nPurchase ${money(P)} | Rehab ${money(R)} | ARV ${money(A)}\nTotal loan ${money(loan)} (LTC ${cost?(loan/cost*100).toFixed(0):0}%, LTARV ${A?(loan/A*100).toFixed(0):0}%)\nCash to close ${money(cashClose)} | Monthly interest ${money(monthly)}\nFinancing cost ${money(fin)} | Est. profit ${money(profit)} | ROI ${(roi*100).toFixed(1)}%\nIllustrative only; subject to underwriting.`;
+  $('#quoteBtn').href='mailto:info@transformfunding.com?subject='+encodeURIComponent('Loan quote request')+'&body='+encodeURIComponent(window.__summary);
+}
+document.querySelectorAll('[data-money]').forEach(el=>el.addEventListener('input',()=>{fmtIn(el);calc()}));
+document.querySelectorAll('#calc .range').forEach(el=>el.addEventListener('input',()=>{fill(el);if(cap2[el.id])$('#'+cap2[el.id]).textContent=label[el.id](el.value);calc()}));
+document.querySelectorAll('#draws button').forEach(b=>b.addEventListener('click',()=>{drawMode=b.dataset.v;document.querySelectorAll('#draws button').forEach(x=>x.setAttribute('aria-pressed',x===b));calc()}));
+function setMode(m){
+  mode=m;const c=MODES[m];
+  document.querySelectorAll('#mode button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.mode===m));
+  $('#lblPrice').textContent=c.price;$('#lblRehab').textContent=c.rehab;
+  const v=c.v;
+  ['price','rehab','arv'].forEach(k=>{$('#'+k).value=v[k].toLocaleString('en-US')});
+  ['term','rate','adv','rehabPct','cap'].forEach(k=>{const el=$('#'+k);el.value=v[k];fill(el);$('#'+cap2[k]).textContent=label[k](v[k])});
+  calc();
+}
+document.querySelectorAll('#mode button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+$('#copyBtn').addEventListener('click',async e=>{try{await navigator.clipboard.writeText(window.__summary);e.target.textContent='Copied ✓'}catch(_){e.target.textContent='Select & copy manually'}setTimeout(()=>e.target.textContent='Copy summary',1800)});
+document.querySelectorAll('.range').forEach(fill);
+calc();
+</script>
+
+</body>
+</html>
